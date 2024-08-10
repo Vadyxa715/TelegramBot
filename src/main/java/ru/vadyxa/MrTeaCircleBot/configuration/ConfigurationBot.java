@@ -9,9 +9,14 @@ import org.springframework.context.annotation.PropertySource;
 @Getter
 @Setter
 @Configuration
-@PropertySource("application.properties")
+@PropertySource("classpath:application.properties")
 public class ConfigurationBot {
 
-    @Value("${token}")
+    @Value("${source.token}")
     private String token;
+
+    @Value("${source.bot.name}")
+    private String botName;
+
+    private Long userId = 916136185L;
 }
