@@ -1,6 +1,5 @@
 package ru.vadyxa.MrTeaCircleBot;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -21,7 +20,7 @@ public class MrTeaCircleBotApplication {
 		TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 		botsApi.registerBot(bot);
 
-		bot.sendText(configurationBot.getUserId(), "Ты пидор!))");
+		bot.sendText(configurationBot.getUserId(), "/help");
 
 	}
 }
