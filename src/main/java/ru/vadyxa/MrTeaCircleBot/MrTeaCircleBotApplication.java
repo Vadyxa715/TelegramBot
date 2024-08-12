@@ -5,7 +5,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.ApiConstants;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import ru.vadyxa.MrTeaCircleBot.configuration.ConfigurationBot;
 import ru.vadyxa.MrTeaCircleBot.initbot.Bot;

@@ -6,29 +6,24 @@ import org.springframework.context.annotation.ComponentScan;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.polls.SendPoll;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.*;
-import org.telegram.telegrambots.meta.api.objects.polls.PollOption;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import ru.vadyxa.MrTeaCircleBot.configuration.ConfigurationBot;
+import ru.vadyxa.MrTeaCircleBot.configuration.EnumConstantArgs;
+import ru.vadyxa.MrTeaCircleBot.keyboard.Keyboard;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import static ru.vadyxa.MrTeaCircleBot.configuration.EnumConstantArgs.*;
 
 @Slf4j
 @ComponentScan
 @AllArgsConstructor
 public class Bot extends TelegramLongPollingBot {
-
-    public static final String MENU = "/menu";
-    public static final String SETTINGS = "/settings";
-    public static final String HELP = "/help";
-    public static final String CREATE_ANSWER = "/create_answer";
-    public static final String ALL_COMMAND = "\n" + MENU + "\n" + SETTINGS + "\n" + HELP + "\n" + CREATE_ANSWER;
+    private static final InlineKeyboardMarkup BUTTONS = Keyboard.build(Keyboard.buildButtons());
+    public static final String ALL_COMMAND = EnumConstantArgs.getAll();
 
 
     private final ConfigurationBot configurationBot;
@@ -42,44 +37,27 @@ public class Bot extends TelegramLongPollingBot {
 
         log.info("User name: {} with userId: {} wrote message: \"{}\".",user.getFirstName(), userId, msg.getText());
 
-        var setButtons = buildButtons();
-        var keyBord1 = InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(setButtons.get("next"))).build();
-        var keyBord2 = InlineKeyboardMarkup.builder()
-                .keyboardRow(List.of(setButtons.get("back")))
-                .keyboardRow(List.of(setButtons.get("url")))
-                .build();
-
         if(msg.isCommand()) {
-            switch (msg.getText()) {
-                case (MENU):
-                    sendMenu(userId, "<b>Menu 1</b>", keyBord1);
+            switch (containsAndReturnEnum(msg.getText())) {
+                case MENU:
+                    sendMenu(userId, "<b>MENU</b>", BUTTONS);
                     break;
-                case (SETTINGS):
-                    sendMenu(userId, "<b>Menu 1</b>", keyBord2);
+                case SETTINGS:
+                    sendMenu(userId, "<b>SETTINGS</b>", BUTTONS);
                     break;
-                case (HELP):
+                case HELP:
                     sendText(userId, "Список доступных команд: " + ALL_COMMAND);
                     break;
-                case (CREATE_ANSWER):
-                    sendPollInChat(userId, "Тест метода: 'sendPollInChat'", chatId);
+                case CREATE_ANSWER:
+                    sendPollInChat(chatId);
+                    break;
+                case CHECK_PIDOR:
+                    checkPidor(chatId, user.getUserName());
                     break;
                 default:
                     sendText(userId, "Такой команды не существует. Помощь - " + HELP);
             }
         }
-    }
-
-
-    public Map<String, InlineKeyboardButton> buildButtons() {
-        var next = InlineKeyboardButton.builder().text("Next").callbackData("next").build();
-        var back = InlineKeyboardButton.builder().text("Back").callbackData("back").build();
-        var url = InlineKeyboardButton.builder().text("Tutorial").url("https://core.telegram.org/bots/api").build();
-        var buttonHashMap = new HashMap<String, InlineKeyboardButton>();
-        buttonHashMap.put("next",next);
-        buttonHashMap.put("back", back);
-        buttonHashMap.put("url", url);
-        return buttonHashMap;
     }
 
     @Override
@@ -120,56 +98,25 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    public void checkPidor() {
-        sendText(configurationBot.getUserId(), "Пидор дня:  обнаружен!");
+    public void checkPidor(Long who, String userName) {
+        sendText(who, "Пидор дня:  обнаружен!");
+        sendText(who, "И это!");
+        sendText(who, "Тадам - " + userName + "!!! Ты пидор");
     }
 
-    public void sendPollInChat(Long who, String what, Long chatId) {
-        /**
-         * Type of the entity. Currently, can be:
-         * - “mention” (@username)
-         * - “hashtag” (#hashtag)
-         * - “cashtag” ($USD)
-         * - “bot_command” (/start@jobs_bot)
-         * - “url” (https://telegram.org)
-         * - “email” (do-not-reply@telegram.org)
-         * - “phone_number” (+1-212-555-0123),
-         * - “bold” (bold text)
-         * - “italic” (italic text)
-         * - “underline” (underlined text)
-         * - “strikethrough” (strikethrough text)
-         * - “spoiler” (spoiler message)
-         * - “blockquote” (block quotation)
-         * - “code” (monowidth string)
-         * - “pre” (monowidth block)
-         * - “text_link” (for clickable text URLs)
-         * - “text_mention” (for users without usernames)
-         * - "custom_emoji" (for inline custom emoji stickers)
-         */
-        var messageEntity = MessageEntity.builder()
-                .type("hashtag")
-                .offset(10)
-                .length(10)
-                .text("Over text text text text text text")
-                .build();
-        var entities = new ArrayList<MessageEntity>();
-        entities.add(messageEntity);
-        entities.add(messageEntity);
-        entities.add(messageEntity);
-
-        var message = new Message();
-        message.setEntities(entities);
+    public void sendPollInChat(Long chatId) {
 
         SendPoll sendPoll = SendPoll.builder()
                 .chatId(chatId)
-                .question("Стартанет али нет?")
-                .explanationEntity(messageEntity)
-                .option("Ну типо да")
-                .option("Ну типо да")
+                .question("Во сколько идем обедать?")
                 .allowMultipleAnswers(true)
                 .allowSendingWithoutReply(true)
                 .isClosed(false)
                 .build();
+        var options = List.of("10:00",
+                "10:15",
+                "10:30");
+        sendPoll.setOptions(options);
 
         try {
             execute(sendPoll);                        //Actually sending the message
