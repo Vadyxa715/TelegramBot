@@ -9,20 +9,21 @@ import java.util.Arrays;
 @Getter
 @ToString
 @AllArgsConstructor
-public enum EnumConstantArgs {
+public enum EnumCommandConstantArgs {
 
     MENU("/menu"),
     SETTINGS("/settings"),
     HELP("/help"),
     CREATE_ANSWER("/create_answer"),
     CHECK_PIDOR("/check_pidor"),
+    LUNCH("/lunch"),
     DEFAULT("");
 
     private final String value;
 
-    public static EnumConstantArgs containsAndReturnEnum(String value) {
+    public static EnumCommandConstantArgs containsAndReturnEnum(String value) {
         try {
-            return Arrays.stream(EnumConstantArgs.values())
+            return Arrays.stream(EnumCommandConstantArgs.values())
                     .filter(i -> i.value.equals(value))
                     .findFirst()
                     .orElseThrow(IllegalArgumentException::new);
@@ -37,6 +38,7 @@ public enum EnumConstantArgs {
                 + SETTINGS.value + "\n"
                 + HELP.value + "\n"
                 + CREATE_ANSWER.value + "\n"
+                + LUNCH.value + "\n"
                 + CHECK_PIDOR.value + "\n";
     }
 }

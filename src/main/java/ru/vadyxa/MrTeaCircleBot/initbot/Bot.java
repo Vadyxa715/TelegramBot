@@ -8,37 +8,43 @@ import org.telegram.telegrambots.meta.api.methods.polls.SendPoll;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButtonRequestChat;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import ru.vadyxa.MrTeaCircleBot.configuration.ConfigurationBot;
-import ru.vadyxa.MrTeaCircleBot.configuration.EnumConstantArgs;
+import ru.vadyxa.MrTeaCircleBot.configuration.EnumCommandConstantArgs;
 import ru.vadyxa.MrTeaCircleBot.keyboard.Keyboard;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
-import static ru.vadyxa.MrTeaCircleBot.configuration.EnumConstantArgs.*;
+import static ru.vadyxa.MrTeaCircleBot.configuration.EnumCommandConstantArgs.HELP;
+import static ru.vadyxa.MrTeaCircleBot.configuration.EnumCommandConstantArgs.containsAndReturnEnum;
 
 @Slf4j
 @ComponentScan
 @AllArgsConstructor
 public class Bot extends TelegramLongPollingBot {
     private static final InlineKeyboardMarkup BUTTONS = Keyboard.build(Keyboard.buildButtons());
-    public static final String ALL_COMMAND = EnumConstantArgs.getAll();
+    private static final InlineKeyboardMarkup LUNCH_BUTTON = Keyboard.build(Keyboard.buildLunchButtons());
+    public static final String ALL_COMMAND = EnumCommandConstantArgs.getAll();
 
 
     private final ConfigurationBot configurationBot;
 
     @Override
     public void onUpdateReceived(Update update) {
-        var msg = update.getMessage();
-        var user = msg.getFrom();
-        var userId = user.getId();
-        var chatId = msg.getChatId();
+        var message = update.getMessage();
 
-        log.info("User name: {} with userId: {} wrote message: \"{}\".",user.getFirstName(), userId, msg.getText());
-
-        if(msg.isCommand()) {
-            switch (containsAndReturnEnum(msg.getText())) {
+        if(Objects.nonNull(message) && message.isCommand()) {
+            var user = message.getFrom();
+            var userId = user.getId();
+            var chatId = message.getChatId();
+            switch (containsAndReturnEnum(message.getText())) {
                 case MENU:
                     sendMenu(userId, "<b>MENU</b>", BUTTONS);
                     break;
@@ -54,8 +60,27 @@ public class Bot extends TelegramLongPollingBot {
                 case CHECK_PIDOR:
                     checkPidor(chatId, user.getUserName());
                     break;
+                case LUNCH:
+                    sendMenu(chatId,"Создать обеденный перерыв", LUNCH_BUTTON);
+                    break;
                 default:
                     sendText(userId, "Такой команды не существует. Помощь - " + HELP);
+            }
+        }
+
+        if(update.hasCallbackQuery()) {
+            var user = update.getCallbackQuery().getFrom();
+            var userId = user.getId();
+            var chatId = update.getCallbackQuery().getMessage().getChatId();
+            switch (update.getCallbackQuery().getData()) {
+                case Keyboard.CALL_BACK_LUNCH:
+                    sendTimeInput(userId);
+                    break;
+                case Keyboard.CALL_BACK_CHECK_PIDOR:
+                    checkPidor(chatId, user.getUserName());
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -87,12 +112,14 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     public void sendMenu(Long who, String txt, InlineKeyboardMarkup kb){
-        SendMessage sm = SendMessage.builder().chatId(who.toString())
-                .parseMode("HTML").text(txt)
-                .replyMarkup(kb).build();
-
+        var sendMessage = SendMessage.builder()
+                .chatId(who.toString())
+                .parseMode("HTML")
+                .text(txt)
+                .replyMarkup(kb)
+                .build();
         try {
-            execute(sm);
+            execute(sendMessage);
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
@@ -124,6 +151,41 @@ public class Bot extends TelegramLongPollingBot {
             log.error(e.getMessage());
         }
     }
+
+    private void sendTimeInput(Long userId) {
+        var markup = ReplyKeyboardMarkup
+                .builder()
+                .keyboardRow(new KeyboardRow(Arrays.asList(new KeyboardButton("U+2B06"), new KeyboardButton(":arrow_down:"))))
+                .keyboardRow(new KeyboardRow(Arrays.asList(new KeyboardButton(""), new KeyboardButton(":arrow_down:"))))
+                .selective(true)
+                .build();
+
+        sendReplyMenu(userId, "Введите время в формате HH:MM:", markup);
+    }
+
+    private void sendReplyMenu(Long userId, String text, ReplyKeyboardMarkup replyKeyboardMarkup) {
+        var sendMessage = SendMessage.builder()
+                .chatId(userId.toString())
+                .parseMode("HTML")
+                .text(text)
+                .replyMarkup(replyKeyboardMarkup)
+                .build();
+        try {
+            execute(sendMessage);                        //Actually sending the message
+        } catch (TelegramApiException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+// Добавьте здесь методы для обработки ввода времени и отправки ответа
+
+
+    /**
+     * Создать рекурсивный метод который будет отрисовывать кнопку
+     * и при нажатии на увеличение/уменьшение значения стрелочкой
+     * будет вызывать себя снова с новыми значениями на циферблате
+     */
+
 
 
 }
